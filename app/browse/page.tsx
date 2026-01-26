@@ -84,7 +84,7 @@ export default function BrowsePage() {
     try {
       const response = await fetch('/api/saved-properties');
       const data = await response.json();
-      const savedIds = new Set(
+      const savedIds = new Set<string>(
         data.savedProperties?.map((sp: SavedProperty) => sp.property.id) || []
       );
       setSavedPropertyIds(savedIds);

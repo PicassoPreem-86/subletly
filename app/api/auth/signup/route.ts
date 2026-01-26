@@ -12,7 +12,7 @@ const signupSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   accountType: z.enum(['RENTER', 'LANDLORD'], {
-    errorMap: () => ({ message: 'Account type must be either RENTER or LANDLORD' }),
+    message: 'Account type must be either RENTER or LANDLORD',
   }),
 });
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       );
     }

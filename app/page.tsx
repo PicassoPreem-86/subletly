@@ -210,7 +210,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">1. Get Verified</h3>
               <p className="text-gray-600">
-                Complete ID, phone, and property verification. Earn "Verified Landlord" or "Verified Renter" badges for enhanced trust.
+                Complete ID, phone, and property verification. Earn &quot;Verified Landlord&quot; or &quot;Verified Renter&quot; badges for enhanced trust.
               </p>
             </div>
 
@@ -242,7 +242,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">3. Book Securely</h3>
               <p className="text-gray-600">
-                Pay through escrow. Funds held for 24-48 hours after move-in. Confirm everything's good, then payment releases to host.
+                Pay through escrow. Funds held for 24-48 hours after move-in. Confirm everything&apos;s good, then payment releases to host.
               </p>
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function Home() {
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">Dual-Sided Verification</h3>
                 <p className="text-gray-600">
-                  Unlike other platforms, we verify BOTH parties. Earn "Verified Landlord," "Trusted Landlord," or "Verified Renter" badges through our multi-layer vetting process.
+                  Unlike other platforms, we verify BOTH parties. Earn &quot;Verified Landlord,&quot; &quot;Trusted Landlord,&quot; or &quot;Verified Renter&quot; badges through our multi-layer vetting process.
                 </p>
               </div>
             </div>
@@ -434,7 +434,7 @@ export default function Home() {
                 className="h-12 w-auto mb-4"
               />
               <p className="text-gray-400 text-sm">
-                NYC's most trusted subletting platform. Find your perfect sublet with verified hosts and secure payments.
+                NYC&apos;s most trusted subletting platform. Find your perfect sublet with verified hosts and secure payments.
               </p>
             </div>
 
