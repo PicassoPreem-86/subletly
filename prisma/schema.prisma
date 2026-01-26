@@ -1,0 +1,211 @@
+// Subletly Database Schema
+// Prisma schema for user authentication and property listings
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum AccountType {
+  RENTER
+  LANDLORD
+}
+
+enum PropertyStatus {
+  DRAFT
+  ACTIVE
+  RENTED
+  INACTIVE
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  CONDO
+  STUDIO
+  ROOM
+}
+
+enum InquiryStatus {
+  PENDING
+  RESPONDED
+  CLOSED
+}
+
+// User Model
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  emailVerified DateTime?
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  accountType   AccountType
+  image         String?
+  bio           String?
+
+  // Verification
+  verified      Boolean     @default(false)
+  verifiedAt    DateTime?
+
+  // Relationships
+  accounts         Account[]
+  sessions         Session[]
+  properties       Property[]        // Only for landlords
+  savedProperties  SavedProperty[]   // For renters
+  sentInquiries    Inquiry[]         @relation("RenterInquiries")
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([email])
+}
+
+// NextAuth Account Model
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// NextAuth Session Model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// NextAuth Verification Token
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Property Listing Model
+model Property {
+  id          String         @id @default(cuid())
+
+  // Basic Info
+  title       String
+  description String
+  propertyType PropertyType
+  status      PropertyStatus @default(DRAFT)
+
+  // Location
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  neighborhood String?
+
+  // Details
+  bedrooms    Int
+  bathrooms   Float
+  squareFeet  Int?
+  furnished   Boolean        @default(false)
+
+  // Pricing
+  monthlyRent Int
+  deposit     Int?
+  utilities   Boolean        @default(false) // Included or not
+
+  // Availability
+  availableFrom DateTime
+  availableTo   DateTime
+  minStay       Int?         // Minimum months
+
+  // Amenities (stored as JSON string)
+  amenities   String         @default("[]")
+
+  // Images (stored as JSON string)
+  images      String         @default("[]")
+
+  // Features
+  petsAllowed Boolean        @default(false)
+  smoking     Boolean        @default(false)
+  parking     Boolean        @default(false)
+
+  // Landlord Info
+  landlordId  String
+  landlord    User             @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  savedBy     SavedProperty[]
+  inquiries   Inquiry[]
+
+  // Metrics
+  views       Int              @default(0)
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([landlordId])
+  @@index([city, state])
+  @@index([status])
+  @@index([availableFrom, availableTo])
+}
+
+// Saved Properties (Favorites)
+model SavedProperty {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+// Inquiries (Contact Landlord)
+model Inquiry {
+  id          String        @id @default(cuid())
+  propertyId  String
+  renterId    String
+
+  message     String
+  phone       String?
+  moveInDate  DateTime?
+  status      InquiryStatus @default(PENDING)
+
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  renter      User          @relation("RenterInquiries", fields: [renterId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([renterId])
+  @@index([propertyId])
+  @@index([status])
+}
