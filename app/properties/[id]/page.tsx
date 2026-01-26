@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -47,8 +47,9 @@ interface SavedProperty {
   };
 }
 
-export default function PropertyDetailPage({ params }: { params: { id: string } }) {
+export default function PropertyDetailPage() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
   const { data: session } = useSession();
   const [property, setProperty] = useState<Property | null>(null);
   const [isSaved, setIsSaved] = useState(false);
