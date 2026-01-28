@@ -1,0 +1,1443 @@
+{
+  "version": "1.0",
+  "projectName": "Subletly",
+  "lastUpdated": "2026-01-28",
+  "completionStatus": {
+    "total": 45,
+    "completed": 0,
+    "inProgress": 0,
+    "blocked": 0
+  },
+  "features": [
+    {
+      "id": "F-001",
+      "category": "Landlord Features",
+      "name": "Landlord Inquiry Management",
+      "priority": 1,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Enable landlords to view, filter, and respond to renter inquiries on their properties. Landlords should be able to accept or reject inquiries and view inquiry details.",
+      "acceptanceCriteria": [
+        "Landlord can view all inquiries for their properties",
+        "Inquiries are grouped by property",
+        "Landlord can see renter information and message",
+        "Landlord can accept or reject an inquiry",
+        "Inquiry status updates when landlord responds",
+        "UI shows inquiry count badges",
+        "Empty state shown when no inquiries exist"
+      ],
+      "testingSteps": [
+        "Login as landlord",
+        "Navigate to inquiries page/section",
+        "Verify all inquiries for owned properties are displayed",
+        "Click accept on an inquiry, verify status changes to ACCEPTED",
+        "Click reject on an inquiry, verify status changes to REJECTED",
+        "Verify renter sees updated inquiry status",
+        "Test with landlord who has no inquiries (empty state)",
+        "Test with landlord who has inquiries on multiple properties"
+      ],
+      "technicalNotes": {
+        "routes": ["/dashboard/landlord/inquiries"],
+        "components": ["InquiryList", "InquiryCard", "InquiryActions"],
+        "apiRoutes": ["/api/inquiries/[id]/respond"],
+        "dbQueries": ["Get inquiries where property.landlordId = currentUser.id"]
+      },
+      "risks": ["Ensure landlords can only respond to inquiries for their own properties"]
+    },
+    {
+      "id": "F-002",
+      "category": "Landlord Features",
+      "name": "Landlord Analytics Dashboard",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-001", "F-012"],
+      "description": "Provide landlords with insights about their properties including views, inquiries, bookings, and revenue metrics.",
+      "acceptanceCriteria": [
+        "Dashboard shows total properties count",
+        "Dashboard shows total inquiries count",
+        "Dashboard shows total bookings count",
+        "Dashboard shows revenue metrics (if payments implemented)",
+        "Charts show inquiry trends over time",
+        "Property performance comparison view",
+        "Filter by date range"
+      ],
+      "testingSteps": [
+        "Login as landlord",
+        "Navigate to analytics/dashboard",
+        "Verify all metrics display correctly",
+        "Test date range filters",
+        "Verify charts render with real data",
+        "Test with landlord who has 0 properties",
+        "Test with landlord who has multiple properties"
+      ],
+      "technicalNotes": {
+        "routes": ["/dashboard/landlord/analytics"],
+        "libraries": ["recharts or tremor"],
+        "aggregations": ["Count inquiries by property", "Count bookings by property", "Sum revenue"]
+      },
+      "risks": ["Performance with large datasets", "Chart library choice"]
+    },
+    {
+      "id": "F-003",
+      "category": "Landlord Features",
+      "name": "Bulk Property Operations",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Allow landlords to perform bulk actions on multiple properties (e.g., change status, delete, update availability).",
+      "acceptanceCriteria": [
+        "Checkbox selection for multiple properties",
+        "Bulk status change (Available/Inactive)",
+        "Bulk delete with confirmation",
+        "Bulk availability date update",
+        "Select all / deselect all functionality",
+        "Action confirmation modals"
+      ],
+      "testingSteps": [
+        "Login as landlord",
+        "Select multiple properties",
+        "Change status to inactive, verify all selected properties updated",
+        "Select properties and delete, verify deletion",
+        "Test select all functionality",
+        "Verify only owned properties can be bulk-operated"
+      ],
+      "technicalNotes": {
+        "routes": ["/dashboard/landlord/properties"],
+        "apiRoutes": ["/api/properties/bulk"],
+        "optimisticUI": true
+      },
+      "risks": ["Accidental deletions", "Transaction handling for bulk operations"]
+    },
+    {
+      "id": "F-004",
+      "category": "Landlord Features",
+      "name": "Property Availability Calendar",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-012"],
+      "description": "Visual calendar showing property availability, booked dates, and blocked dates.",
+      "acceptanceCriteria": [
+        "Calendar displays available and booked dates",
+        "Landlord can block specific dates",
+        "Different colors for available/booked/blocked",
+        "Month/week view options",
+        "Sync with bookings automatically"
+      ],
+      "testingSteps": [
+        "Login as landlord",
+        "Navigate to property calendar",
+        "Verify booked dates are marked correctly",
+        "Block a date, verify it's marked as blocked",
+        "Unblock a date, verify it becomes available",
+        "Test month and week views"
+      ],
+      "technicalNotes": {
+        "routes": ["/dashboard/landlord/properties/[id]/calendar"],
+        "libraries": ["react-big-calendar or fullcalendar"],
+        "dbModels": ["Need BlockedDate model or extend Property model"]
+      },
+      "risks": ["Calendar library choice", "Performance with large date ranges"]
+    },
+    {
+      "id": "F-005",
+      "category": "Landlord Features",
+      "name": "Automated Property Status Updates",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-012"],
+      "description": "Automatically update property status based on booking state (e.g., set to RENTED when booked, back to AVAILABLE when booking ends).",
+      "acceptanceCriteria": [
+        "Property status changes to RENTED when booking is confirmed",
+        "Property status changes to AVAILABLE when booking period ends",
+        "Cron job or background task runs daily",
+        "Manual override option for landlords"
+      ],
+      "testingSteps": [
+        "Create a booking that ends tomorrow",
+        "Run status update job",
+        "Verify property status changes to AVAILABLE after end date",
+        "Test with multiple properties and bookings",
+        "Verify manual status changes aren't overridden"
+      ],
+      "technicalNotes": {
+        "cronJobs": ["Daily status check job"],
+        "apiRoutes": ["/api/cron/update-property-status"],
+        "vercelCron": "Use Vercel Cron Jobs or external scheduler"
+      },
+      "risks": ["Timezone handling", "Cron job reliability"]
+    },
+    {
+      "id": "F-006",
+      "category": "Communication",
+      "name": "Email Notification System",
+      "priority": 1,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Implement transactional email system for inquiries, bookings, and account events. Use Resend, SendGrid, or similar service.",
+      "acceptanceCriteria": [
+        "Email sent when renter submits inquiry",
+        "Email sent when landlord responds to inquiry",
+        "Email sent when booking is confirmed",
+        "Email sent when payment is received",
+        "Email templates are professional and branded",
+        "Unsubscribe functionality included"
+      ],
+      "testingSteps": [
+        "Submit an inquiry as renter",
+        "Verify landlord receives email notification",
+        "Respond to inquiry as landlord",
+        "Verify renter receives email notification",
+        "Create a booking",
+        "Verify both parties receive booking confirmation emails",
+        "Test unsubscribe link"
+      ],
+      "technicalNotes": {
+        "emailProvider": "Resend (recommended) or SendGrid",
+        "templates": ["inquiry-received", "inquiry-response", "booking-confirmed", "payment-received"],
+        "envVars": ["RESEND_API_KEY or SENDGRID_API_KEY"],
+        "libraries": ["@react-email/components for templates"]
+      },
+      "risks": ["Email deliverability", "Spam filters", "Provider choice"]
+    },
+    {
+      "id": "F-007",
+      "category": "Communication",
+      "name": "In-App Notification System",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Real-time in-app notifications for important events (inquiries, bookings, messages) with bell icon and notification center.",
+      "acceptanceCriteria": [
+        "Notification bell icon in header",
+        "Badge shows unread notification count",
+        "Notification dropdown/panel lists recent notifications",
+        "Notifications marked as read when viewed",
+        "Different notification types (inquiry, booking, message)",
+        "Click notification navigates to relevant page"
+      ],
+      "testingSteps": [
+        "Login as landlord",
+        "Have renter submit inquiry",
+        "Verify notification appears in bell icon",
+        "Click notification, verify navigation to inquiry",
+        "Mark notification as read",
+        "Test with multiple notifications",
+        "Test notification persistence across page refreshes"
+      ],
+      "technicalNotes": {
+        "dbModel": "Notification model needed",
+        "realtime": "Polling or Supabase Realtime",
+        "components": ["NotificationBell", "NotificationPanel", "NotificationItem"]
+      },
+      "risks": ["Real-time implementation complexity", "Notification storage growth"]
+    },
+    {
+      "id": "F-008",
+      "category": "Communication",
+      "name": "Direct Messaging System",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 3,
+      "dependencies": [],
+      "description": "In-app messaging between landlords and renters for property-related conversations.",
+      "acceptanceCriteria": [
+        "Messaging interface (chat UI)",
+        "Real-time message delivery",
+        "Message thread per property inquiry",
+        "Unread message indicators",
+        "Message history pagination",
+        "Image/file attachment support"
+      ],
+      "testingSteps": [
+        "Login as renter, start conversation with landlord",
+        "Send message, verify landlord receives it",
+        "Landlord replies, verify renter receives it",
+        "Test real-time delivery (both users online)",
+        "Test message persistence",
+        "Test unread indicators",
+        "Test file attachments"
+      ],
+      "technicalNotes": {
+        "dbModels": ["Message", "Conversation"],
+        "realtime": "Supabase Realtime, Pusher, or WebSockets",
+        "storage": "Supabase Storage for attachments"
+      },
+      "risks": ["Real-time infrastructure cost", "Scalability", "Moderation"]
+    },
+    {
+      "id": "F-009",
+      "category": "Communication",
+      "name": "SMS Notifications",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-006"],
+      "description": "Optional SMS notifications for critical events (booking confirmations, payment received) using Twilio.",
+      "acceptanceCriteria": [
+        "User can opt-in to SMS notifications in settings",
+        "SMS sent for booking confirmations",
+        "SMS sent for payment confirmations",
+        "SMS sent for urgent messages",
+        "User can opt-out anytime"
+      ],
+      "testingSteps": [
+        "Enable SMS notifications in user settings",
+        "Create a booking, verify SMS received",
+        "Make a payment, verify SMS received",
+        "Disable SMS notifications",
+        "Verify no SMS received after opt-out"
+      ],
+      "technicalNotes": {
+        "smsProvider": "Twilio",
+        "envVars": ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"],
+        "userModel": "Add smsOptIn and phoneNumber fields"
+      },
+      "risks": ["SMS costs", "International SMS support", "Phone number verification"]
+    },
+    {
+      "id": "F-010",
+      "category": "Communication",
+      "name": "Email Verification",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-006"],
+      "description": "Require users to verify their email address before using the platform.",
+      "acceptanceCriteria": [
+        "Verification email sent on registration",
+        "User must click verification link",
+        "Unverified users see banner to verify email",
+        "Unverified users can't create properties or inquiries",
+        "Resend verification email option"
+      ],
+      "testingSteps": [
+        "Register new user",
+        "Verify email sent with verification link",
+        "Click link, verify account becomes verified",
+        "Try to create property as unverified user, verify blocked",
+        "Test resend verification email",
+        "Verify banner shown for unverified users"
+      ],
+      "technicalNotes": {
+        "nextAuth": "Add emailVerified field (already exists in User model)",
+        "middleware": "Block certain routes for unverified users",
+        "emailTemplate": "verification-email"
+      },
+      "risks": ["Email deliverability to spam", "Verification token expiration"]
+    },
+    {
+      "id": "F-011",
+      "category": "Payment & Booking",
+      "name": "Stripe Payment Integration",
+      "priority": 1,
+      "passes": false,
+      "estimatedSessions": 3,
+      "dependencies": [],
+      "description": "Integrate Stripe for secure payment processing. Support one-time payments for booking deposits or full rental amounts.",
+      "acceptanceCriteria": [
+        "Stripe Connect or standard integration set up",
+        "Payment form with card input",
+        "Successful payment creates Payment record",
+        "Failed payments handled gracefully",
+        "Payment confirmation email sent",
+        "Refund capability (manual)",
+        "Stripe webhook integration for payment status"
+      ],
+      "testingSteps": [
+        "Create a booking",
+        "Enter test card (4242 4242 4242 4242)",
+        "Submit payment, verify success",
+        "Verify Payment record created in database",
+        "Test declined card, verify error handling",
+        "Test webhook processing",
+        "Test refund flow"
+      ],
+      "technicalNotes": {
+        "stripeMode": "Stripe Connect if landlords receive payments, else standard",
+        "libraries": ["@stripe/stripe-js", "@stripe/react-stripe-js"],
+        "envVars": ["STRIPE_SECRET_KEY", "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET"],
+        "dbModel": "Payment model needed",
+        "webhookRoute": "/api/webhooks/stripe"
+      },
+      "risks": ["PCI compliance", "Stripe Connect complexity", "Test mode vs live mode"]
+    },
+    {
+      "id": "F-012",
+      "category": "Payment & Booking",
+      "name": "Booking System",
+      "priority": 1,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-001", "F-011"],
+      "description": "Formal booking flow that transitions accepted inquiries into confirmed bookings with payment.",
+      "acceptanceCriteria": [
+        "After inquiry accepted, renter can proceed to booking",
+        "Booking form captures move-in/out dates, payment info",
+        "Booking creates Booking record in database",
+        "Property status updates to PENDING during booking",
+        "Payment processed before booking confirmed",
+        "Both parties receive booking confirmation"
+      ],
+      "testingSteps": [
+        "Submit inquiry as renter",
+        "Accept inquiry as landlord",
+        "Proceed to booking as renter",
+        "Fill booking form and submit payment",
+        "Verify Booking record created",
+        "Verify property status updated",
+        "Verify both parties receive confirmations",
+        "Test booking cancellation flow"
+      ],
+      "technicalNotes": {
+        "dbModel": "Booking model (propertyId, renterId, moveInDate, moveOutDate, totalAmount, status, paymentId)",
+        "routes": ["/dashboard/renter/bookings/[id]", "/dashboard/landlord/bookings"],
+        "statusFlow": "PENDING → CONFIRMED → ACTIVE → COMPLETED → CANCELLED"
+      },
+      "risks": ["Double booking prevention", "Date overlap validation", "Cancellation policy"]
+    },
+    {
+      "id": "F-013",
+      "category": "Payment & Booking",
+      "name": "Receipt Generation",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-011", "F-012"],
+      "description": "Generate PDF receipts for completed payments that users can download.",
+      "acceptanceCriteria": [
+        "Receipt includes payment amount, date, property details",
+        "Receipt includes payer and payee information",
+        "Receipt has unique receipt number",
+        "Receipt downloadable as PDF",
+        "Receipt sent via email automatically"
+      ],
+      "testingSteps": [
+        "Complete a payment",
+        "Download receipt PDF",
+        "Verify all information is correct",
+        "Verify receipt sent via email",
+        "Test with different payment amounts"
+      ],
+      "technicalNotes": {
+        "libraries": ["jsPDF or Puppeteer for PDF generation"],
+        "template": "Receipt template design needed",
+        "storage": "Store receipts in Supabase Storage or S3"
+      },
+      "risks": ["PDF generation performance", "Template design"]
+    },
+    {
+      "id": "F-014",
+      "category": "Payment & Booking",
+      "name": "Refund Processing",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-011", "F-012"],
+      "description": "Support refunds for cancelled bookings based on cancellation policy.",
+      "acceptanceCriteria": [
+        "Refund initiated from landlord dashboard",
+        "Refund amount calculated based on policy",
+        "Refund processed via Stripe",
+        "Refund confirmation sent to renter",
+        "Booking status updated to REFUNDED"
+      ],
+      "testingSteps": [
+        "Create and cancel a booking",
+        "Process refund as landlord",
+        "Verify Stripe refund created",
+        "Verify renter receives refund confirmation",
+        "Verify booking status updated",
+        "Test partial refunds"
+      ],
+      "technicalNotes": {
+        "stripeAPI": "stripe.refunds.create()",
+        "policy": "Define cancellation policy (24 hours, 7 days, etc.)",
+        "dbFields": "Add refundAmount, refundedAt to Payment model"
+      },
+      "risks": ["Refund timing", "Partial refund calculations", "Policy enforcement"]
+    },
+    {
+      "id": "F-015",
+      "category": "Payment & Booking",
+      "name": "Escrow/Security Deposit",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-011", "F-012"],
+      "description": "Hold security deposits in escrow and release to landlord after rental period ends without disputes.",
+      "acceptanceCriteria": [
+        "Security deposit amount configurable per property",
+        "Deposit held separate from rental payment",
+        "Automatic release X days after rental ends",
+        "Dispute mechanism to hold deposit",
+        "Partial deductions supported"
+      ],
+      "testingSteps": [
+        "Create booking with security deposit",
+        "Verify deposit held separately",
+        "Wait for rental to end (or simulate)",
+        "Verify deposit released to landlord",
+        "Test dispute flow to hold deposit",
+        "Test partial deduction"
+      ],
+      "technicalNotes": {
+        "stripeConnect": "Likely requires Stripe Connect for escrow",
+        "cronJob": "Daily job to release deposits",
+        "dbModel": "Extend Booking model with depositAmount, depositStatus, depositReleasedAt"
+      },
+      "risks": ["Stripe Connect complexity", "Dispute resolution process", "Legal compliance"]
+    },
+    {
+      "id": "F-016",
+      "category": "Trust & Safety",
+      "name": "Reviews and Ratings",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-012"],
+      "description": "Allow renters to review properties and landlords after booking completion. Display ratings on property pages.",
+      "acceptanceCriteria": [
+        "Renter can leave review after booking ends",
+        "Review includes star rating (1-5) and text comment",
+        "Reviews visible on property detail page",
+        "Average rating displayed on property card",
+        "Landlord can respond to reviews",
+        "Reviews cannot be edited after submission"
+      ],
+      "testingSteps": [
+        "Complete a booking",
+        "Submit review as renter",
+        "Verify review appears on property page",
+        "Verify average rating calculated correctly",
+        "Respond to review as landlord",
+        "Test with multiple reviews",
+        "Verify can't review before booking ends"
+      ],
+      "technicalNotes": {
+        "dbModel": "Review model (propertyId, bookingId, renterId, rating, comment, landlordResponse)",
+        "aggregation": "Calculate average rating per property",
+        "validation": "Only allow review if booking is COMPLETED"
+      },
+      "risks": ["Fake reviews", "Moderation needs", "Review bombing"]
+    },
+    {
+      "id": "F-017",
+      "category": "Trust & Safety",
+      "name": "ID Verification",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Verify user identity using ID documents (driver's license, passport) via third-party service like Stripe Identity or Persona.",
+      "acceptanceCriteria": [
+        "User can upload ID document",
+        "Verification service processes document",
+        "Verified badge shown on user profile",
+        "Landlords can require verified renters only",
+        "Verification status stored in database"
+      ],
+      "testingSteps": [
+        "Navigate to verification settings",
+        "Upload test ID document",
+        "Submit for verification",
+        "Verify status updates to VERIFIED",
+        "Verify badge appears on profile",
+        "Test rejection handling"
+      ],
+      "technicalNotes": {
+        "provider": "Stripe Identity or Persona",
+        "userModel": "Add verificationStatus field",
+        "webhook": "Process verification result webhook"
+      },
+      "risks": ["Privacy concerns", "Provider cost", "False rejections"]
+    },
+    {
+      "id": "F-018",
+      "category": "Trust & Safety",
+      "name": "Report & Flag System",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Allow users to report inappropriate listings, messages, or behavior for admin review.",
+      "acceptanceCriteria": [
+        "Report button on property listings",
+        "Report reasons (spam, scam, inappropriate, etc.)",
+        "Report submitted to admin queue",
+        "Admin can review and take action",
+        "Reporter notified of outcome"
+      ],
+      "testingSteps": [
+        "Click report on a property",
+        "Select reason and submit",
+        "Verify report appears in admin queue",
+        "Review and resolve as admin",
+        "Verify reporter notified",
+        "Test duplicate report prevention"
+      ],
+      "technicalNotes": {
+        "dbModel": "Report model (reporterId, reportedEntityId, entityType, reason, status)",
+        "adminRoute": "/dashboard/admin/reports"
+      },
+      "risks": ["False reports", "Moderation workload"]
+    },
+    {
+      "id": "F-019",
+      "category": "Trust & Safety",
+      "name": "Block/Mute Users",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Allow users to block or mute other users to prevent unwanted contact.",
+      "acceptanceCriteria": [
+        "Block user option in user profile",
+        "Blocked users can't send messages",
+        "Blocked users can't inquire on properties",
+        "View blocked users list",
+        "Unblock option available"
+      ],
+      "testingSteps": [
+        "Block a user",
+        "Verify blocked user can't send inquiry",
+        "Verify blocked user can't send messages",
+        "View blocked users list",
+        "Unblock user, verify restored access"
+      ],
+      "technicalNotes": {
+        "dbModel": "BlockedUser model (blockerId, blockedId)",
+        "middleware": "Check block status before allowing interactions"
+      },
+      "risks": ["Abuse of blocking feature"]
+    },
+    {
+      "id": "F-020",
+      "category": "Trust & Safety",
+      "name": "Trust Score System",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-016", "F-017"],
+      "description": "Calculate and display trust scores based on verification, reviews, booking history, and responsiveness.",
+      "acceptanceCriteria": [
+        "Trust score calculated for all users",
+        "Score based on: ID verification, review ratings, response time, booking completion rate",
+        "Trust badge levels (Bronze, Silver, Gold)",
+        "Trust score visible on user profile",
+        "Score updates automatically"
+      ],
+      "testingSteps": [
+        "Verify trust score displays on profile",
+        "Complete actions that increase score",
+        "Verify score updates",
+        "Test badge display",
+        "Verify score factors are weighted correctly"
+      ],
+      "technicalNotes": {
+        "calculation": "Weighted algorithm based on multiple factors",
+        "cronJob": "Recalculate scores daily or weekly",
+        "userModel": "Add trustScore and trustBadge fields"
+      },
+      "risks": ["Algorithm fairness", "Gaming the system"]
+    },
+    {
+      "id": "F-021",
+      "category": "Content Management",
+      "name": "Legal Pages",
+      "priority": 1,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Create essential legal pages: Privacy Policy, Terms of Service, About Us, Contact Us.",
+      "acceptanceCriteria": [
+        "Privacy Policy page exists at /privacy",
+        "Terms of Service page exists at /terms",
+        "About Us page exists at /about",
+        "Contact Us page exists at /contact",
+        "Pages linked in footer",
+        "Content is professional and complete"
+      ],
+      "testingSteps": [
+        "Navigate to /privacy, verify page loads",
+        "Navigate to /terms, verify page loads",
+        "Navigate to /about, verify page loads",
+        "Navigate to /contact, verify page loads",
+        "Check footer links work",
+        "Verify content is readable and professional"
+      ],
+      "technicalNotes": {
+        "routes": ["app/(legal)/privacy/page.tsx", "app/(legal)/terms/page.tsx", "app/(legal)/about/page.tsx", "app/(legal)/contact/page.tsx"],
+        "layout": "Use shared layout for legal pages"
+      },
+      "risks": ["Legal content accuracy - consider hiring lawyer to review"]
+    },
+    {
+      "id": "F-022",
+      "category": "Content Management",
+      "name": "FAQ Page",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Create frequently asked questions page for common user questions.",
+      "acceptanceCriteria": [
+        "FAQ page exists at /faq",
+        "Questions organized by category",
+        "Expandable/collapsible answers",
+        "Search functionality",
+        "Linked from footer and help menu"
+      ],
+      "testingSteps": [
+        "Navigate to /faq",
+        "Expand/collapse answers",
+        "Search for a question",
+        "Verify categories work",
+        "Check footer link"
+      ],
+      "technicalNotes": {
+        "routes": ["app/(legal)/faq/page.tsx"],
+        "components": ["Accordion for Q&A"]
+      },
+      "risks": ["Content quality"]
+    },
+    {
+      "id": "F-023",
+      "category": "Content Management",
+      "name": "Blog/Resources",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Blog system for content marketing, SEO, and user education. Use MDX or headless CMS.",
+      "acceptanceCriteria": [
+        "Blog listing page at /blog",
+        "Individual blog post pages",
+        "Categories and tags",
+        "Search and filter posts",
+        "SEO optimized",
+        "Admin can create/edit posts"
+      ],
+      "testingSteps": [
+        "Navigate to /blog",
+        "View a blog post",
+        "Filter by category",
+        "Search for a post",
+        "Create new post as admin",
+        "Verify SEO metadata"
+      ],
+      "technicalNotes": {
+        "cms": "MDX files or Contentful/Sanity",
+        "routes": ["app/blog/page.tsx", "app/blog/[slug]/page.tsx"]
+      },
+      "risks": ["CMS choice and cost"]
+    },
+    {
+      "id": "F-024",
+      "category": "Content Management",
+      "name": "Live Chat Support",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Integrate live chat widget for customer support using Intercom, Crisp, or similar.",
+      "acceptanceCriteria": [
+        "Chat widget visible on all pages",
+        "Users can send messages to support",
+        "Support team receives messages",
+        "Chat history preserved",
+        "Works on mobile"
+      ],
+      "testingSteps": [
+        "Click chat widget",
+        "Send a message",
+        "Verify support receives it",
+        "Test on mobile",
+        "Verify chat history"
+      ],
+      "technicalNotes": {
+        "provider": "Intercom, Crisp, or Tawk.to",
+        "integration": "Script tag in layout or use SDK"
+      },
+      "risks": ["Provider cost", "Privacy implications"]
+    },
+    {
+      "id": "F-025",
+      "category": "Content Management",
+      "name": "Multi-language Support (i18n)",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 3,
+      "dependencies": [],
+      "description": "Internationalization support for Spanish, French, or other languages using next-intl or similar.",
+      "acceptanceCriteria": [
+        "Language selector in header",
+        "All UI text translated",
+        "Language preference persisted",
+        "SEO for different locales",
+        "RTL support if needed"
+      ],
+      "testingSteps": [
+        "Switch to Spanish",
+        "Verify all text translates",
+        "Refresh page, verify language persists",
+        "Test all major pages",
+        "Verify SEO metadata in different languages"
+      ],
+      "technicalNotes": {
+        "library": "next-intl or react-i18next",
+        "translations": "JSON files per locale",
+        "routing": "Subdirectory (/es/) or subdomain"
+      },
+      "risks": ["Translation quality", "Maintenance overhead"]
+    },
+    {
+      "id": "F-026",
+      "category": "Platform Features",
+      "name": "Admin Dashboard",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 3,
+      "dependencies": [],
+      "description": "Admin panel for platform management: user management, property moderation, reports, analytics.",
+      "acceptanceCriteria": [
+        "Admin role and authentication",
+        "View all users with filters",
+        "Ban/suspend users",
+        "View all properties with moderation queue",
+        "Approve/reject properties",
+        "View reports and take action",
+        "Platform-wide analytics"
+      ],
+      "testingSteps": [
+        "Login as admin",
+        "View users list",
+        "Ban a user, verify they can't login",
+        "View properties queue",
+        "Approve/reject a property",
+        "View reports, resolve one",
+        "Check analytics dashboard"
+      ],
+      "technicalNotes": {
+        "routes": ["/dashboard/admin"],
+        "role": "ADMIN role already in User model",
+        "middleware": "Protect admin routes"
+      },
+      "risks": ["Security critical - must be well protected"]
+    },
+    {
+      "id": "F-027",
+      "category": "Platform Features",
+      "name": "Promoted/Featured Listings",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-011"],
+      "description": "Paid feature for landlords to promote their listings at the top of search results.",
+      "acceptanceCriteria": [
+        "Landlord can promote a listing",
+        "Payment for promotion via Stripe",
+        "Promoted listings appear at top of browse page",
+        "Promoted badge visible on listing",
+        "Promotion duration configurable (7 days, 30 days, etc.)",
+        "Automatic expiration"
+      ],
+      "testingSteps": [
+        "Promote a listing as landlord",
+        "Pay for promotion",
+        "Verify listing appears at top of browse page",
+        "Verify promoted badge visible",
+        "Wait for expiration (or simulate)",
+        "Verify listing returns to normal position"
+      ],
+      "technicalNotes": {
+        "dbModel": "Add promotedUntil field to Property model",
+        "sorting": "Sort by promotedUntil DESC, then createdAt DESC",
+        "payment": "One-time payment for promotion duration"
+      },
+      "risks": ["Fairness concerns", "Pricing strategy"]
+    },
+    {
+      "id": "F-028",
+      "category": "Platform Features",
+      "name": "Saved Searches & Alerts",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": ["F-006"],
+      "description": "Allow renters to save search criteria and receive email alerts when matching properties are listed.",
+      "acceptanceCriteria": [
+        "Save search button on browse page",
+        "Saved searches listed in dashboard",
+        "Email alert when new matching property posted",
+        "Edit/delete saved searches",
+        "Alert frequency configurable (instant, daily, weekly)"
+      ],
+      "testingSteps": [
+        "Create a search with filters",
+        "Save the search",
+        "Verify it appears in dashboard",
+        "Create a new property matching criteria",
+        "Verify email alert sent",
+        "Edit saved search",
+        "Delete saved search"
+      ],
+      "technicalNotes": {
+        "dbModel": "SavedSearch model (userId, filters JSON, alertFrequency)",
+        "cronJob": "Check for new matching properties daily/weekly",
+        "emailTemplate": "new-matching-property"
+      },
+      "risks": ["Email frequency management", "Complex filter matching"]
+    },
+    {
+      "id": "F-029",
+      "category": "Platform Features",
+      "name": "Map View",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Interactive map showing available properties with markers and clustering.",
+      "acceptanceCriteria": [
+        "Map view toggle on browse page",
+        "Properties shown as markers on map",
+        "Click marker to see property preview",
+        "Map bounds update search results",
+        "Clustering for dense areas",
+        "Works on mobile"
+      ],
+      "testingSteps": [
+        "Switch to map view",
+        "Verify all properties shown as markers",
+        "Click a marker, verify property preview",
+        "Pan map, verify results update",
+        "Zoom in, verify clustering works",
+        "Test on mobile"
+      ],
+      "technicalNotes": {
+        "library": "react-map-gl (Mapbox) or Google Maps",
+        "geocoding": "Convert addresses to lat/lng (do on property creation)",
+        "dbFields": "Add latitude, longitude to Property model"
+      },
+      "risks": ["Map service cost", "Geocoding accuracy", "API key security"]
+    },
+    {
+      "id": "F-030",
+      "category": "Platform Features",
+      "name": "Social Sharing",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Share property listings on social media (Facebook, Twitter, email) with rich previews.",
+      "acceptanceCriteria": [
+        "Share buttons on property detail page",
+        "Share to Facebook with preview",
+        "Share to Twitter with preview",
+        "Share via email",
+        "Copy link button",
+        "Open Graph meta tags for rich previews"
+      ],
+      "testingSteps": [
+        "Click share to Facebook",
+        "Verify preview appears correctly",
+        "Click share to Twitter",
+        "Verify tweet with preview",
+        "Click share via email",
+        "Copy link and test",
+        "Verify Open Graph tags in page source"
+      ],
+      "technicalNotes": {
+        "library": "react-share",
+        "seo": "Add Open Graph and Twitter Card meta tags",
+        "images": "Ensure property images accessible for OG preview"
+      },
+      "risks": ["Social platform API changes"]
+    },
+    {
+      "id": "F-031",
+      "category": "Infrastructure",
+      "name": "Image Upload to Supabase Storage",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Replace image URL input with actual file upload to Supabase Storage with image optimization.",
+      "acceptanceCriteria": [
+        "Drag-and-drop image upload on property form",
+        "Multiple image support (up to 10 images)",
+        "Image preview before upload",
+        "Automatic image optimization/compression",
+        "Progress indicator during upload",
+        "Images stored in Supabase Storage",
+        "Delete uploaded images"
+      ],
+      "testingSteps": [
+        "Create new property",
+        "Upload multiple images via drag-drop",
+        "Verify images appear in preview",
+        "Submit form, verify images saved to Supabase",
+        "Verify property shows uploaded images",
+        "Delete an image, verify removed from storage",
+        "Test upload size limits",
+        "Test invalid file types"
+      ],
+      "technicalNotes": {
+        "storage": "Supabase Storage bucket for property images",
+        "library": "react-dropzone for upload UI",
+        "optimization": "sharp or next/image for compression",
+        "validation": "Max 10 images, 5MB per image, JPG/PNG only"
+      },
+      "risks": ["Storage costs", "Large file handling", "Image optimization performance"]
+    },
+    {
+      "id": "F-032",
+      "category": "Infrastructure",
+      "name": "Advanced Filters",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Expand search filters to include pet-friendly, furnished, parking, utilities included, etc.",
+      "acceptanceCriteria": [
+        "Additional filter checkboxes on browse page",
+        "Filters: pet-friendly, furnished, parking, utilities, laundry",
+        "Multiple filters work together (AND logic)",
+        "Filter state persists in URL params",
+        "Clear all filters button",
+        "Filter count badge"
+      ],
+      "testingSteps": [
+        "Select pet-friendly filter",
+        "Verify only pet-friendly properties shown",
+        "Add furnished filter",
+        "Verify both filters applied",
+        "Clear filters, verify all shown",
+        "Test URL params update",
+        "Test filter count badge"
+      ],
+      "technicalNotes": {
+        "dbModel": "Add fields to Property model or use amenities array",
+        "urlParams": "Use searchParams for filter state",
+        "components": ["FilterBar", "FilterCheckbox"]
+      },
+      "risks": ["Database query performance with many filters"]
+    },
+    {
+      "id": "F-033",
+      "category": "Infrastructure",
+      "name": "Pagination & Infinite Scroll",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement pagination or infinite scroll for property browse to handle large datasets.",
+      "acceptanceCriteria": [
+        "Browse page loads 20 properties at a time",
+        "Load more button or infinite scroll",
+        "Total count displayed",
+        "Page number in URL (if pagination)",
+        "Works with filters",
+        "Loading state during fetch"
+      ],
+      "testingSteps": [
+        "Load browse page",
+        "Verify only 20 properties shown",
+        "Click load more or scroll",
+        "Verify next 20 properties loaded",
+        "Apply filter, verify pagination resets",
+        "Test with <20 total properties",
+        "Test with >100 total properties"
+      ],
+      "technicalNotes": {
+        "approach": "Cursor-based or offset-based pagination",
+        "prisma": "Use skip and take for offset pagination",
+        "component": "InfiniteScroll component or LoadMore button"
+      },
+      "risks": ["Performance with large datasets", "State management complexity"]
+    },
+    {
+      "id": "F-034",
+      "category": "Infrastructure",
+      "name": "Database Optimization",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Add database indexes, optimize queries, implement connection pooling for better performance.",
+      "acceptanceCriteria": [
+        "Indexes added on frequently queried fields (city, status, landlordId, etc.)",
+        "Connection pooling configured",
+        "Slow queries identified and optimized",
+        "Database query logging in dev mode",
+        "N+1 query problems resolved"
+      ],
+      "testingSteps": [
+        "Run query performance tests",
+        "Verify indexes created in database",
+        "Load browse page, check query time",
+        "Load dashboard, check query count",
+        "Test with large dataset (seed 1000+ properties)",
+        "Verify connection pool working"
+      ],
+      "technicalNotes": {
+        "indexes": "Add @@index([city]), @@index([status]), @@index([landlordId]) to Property model",
+        "pooling": "Configure connection pooling in Prisma",
+        "logging": "Enable Prisma query logging"
+      },
+      "risks": ["Migration downtime", "Index storage overhead"]
+    },
+    {
+      "id": "F-035",
+      "category": "Infrastructure",
+      "name": "Error Handling & Logging",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement comprehensive error handling, logging system, and error tracking with Sentry.",
+      "acceptanceCriteria": [
+        "All API routes have try-catch error handling",
+        "User-friendly error messages",
+        "Errors logged to Sentry",
+        "Error boundaries in React components",
+        "404 and 500 error pages",
+        "Request ID for tracing"
+      ],
+      "testingSteps": [
+        "Trigger an API error, verify logged to Sentry",
+        "Trigger React error, verify error boundary catches it",
+        "Navigate to non-existent route, verify 404 page",
+        "Simulate server error, verify 500 page",
+        "Check Sentry dashboard for errors",
+        "Verify request IDs in logs"
+      ],
+      "technicalNotes": {
+        "sentry": "@sentry/nextjs",
+        "errorPages": "app/error.tsx, app/not-found.tsx",
+        "logging": "Winston or Pino for structured logging"
+      },
+      "risks": ["Sentry cost", "PII in error logs"]
+    },
+    {
+      "id": "F-036",
+      "category": "Infrastructure",
+      "name": "Testing Suite",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Add unit, integration, and E2E tests for critical flows using Jest, React Testing Library, and Playwright.",
+      "acceptanceCriteria": [
+        "Unit tests for utility functions",
+        "Integration tests for API routes",
+        "Component tests for key UI components",
+        "E2E tests for critical user flows (auth, property creation, inquiry, booking)",
+        "Tests run in CI pipeline",
+        "Coverage report generated"
+      ],
+      "testingSteps": [
+        "Run npm test",
+        "Verify all tests pass",
+        "Check coverage report (>70%)",
+        "Run E2E tests",
+        "Verify critical flows covered",
+        "Test failure cases"
+      ],
+      "technicalNotes": {
+        "unit": "Jest + React Testing Library",
+        "e2e": "Playwright or Cypress",
+        "ci": "Run tests in GitHub Actions",
+        "coverage": "Jest coverage report"
+      },
+      "risks": ["Test maintenance overhead", "Flaky E2E tests"]
+    },
+    {
+      "id": "F-037",
+      "category": "Infrastructure",
+      "name": "CI/CD Pipeline",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": ["F-036"],
+      "description": "Set up continuous integration and deployment pipeline with GitHub Actions and Vercel.",
+      "acceptanceCriteria": [
+        "GitHub Actions workflow for tests",
+        "Tests run on every PR",
+        "Automatic deployment to Vercel on merge to main",
+        "Preview deployments for PRs",
+        "Environment secrets configured",
+        "Build status badge in README"
+      ],
+      "testingSteps": [
+        "Create a PR",
+        "Verify tests run automatically",
+        "Verify preview deployment created",
+        "Merge PR, verify production deployment",
+        "Check deployment logs",
+        "Verify environment variables set"
+      ],
+      "technicalNotes": {
+        "ci": "GitHub Actions workflow file",
+        "cd": "Vercel automatic deployment",
+        "environments": "Production, preview, development"
+      },
+      "risks": ["Deployment failures", "Secret management"]
+    },
+    {
+      "id": "F-038",
+      "category": "Infrastructure",
+      "name": "SEO Optimization",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement SEO best practices: meta tags, sitemap, robots.txt, schema markup, and page speed optimization.",
+      "acceptanceCriteria": [
+        "Meta tags for all pages",
+        "Dynamic Open Graph images",
+        "Sitemap.xml generated",
+        "Robots.txt configured",
+        "Schema.org markup for properties",
+        "Core Web Vitals optimized",
+        "Google Search Console set up"
+      ],
+      "testingSteps": [
+        "Check meta tags in page source",
+        "Access /sitemap.xml, verify exists",
+        "Access /robots.txt, verify exists",
+        "Run Lighthouse audit, verify scores >90",
+        "Test Open Graph preview on social media",
+        "Verify schema markup with Google Rich Results Test"
+      ],
+      "technicalNotes": {
+        "nextjs": "Use Next.js metadata API",
+        "sitemap": "next-sitemap package",
+        "schema": "JSON-LD for structured data",
+        "performance": "Image optimization, lazy loading, code splitting"
+      },
+      "risks": ["Ongoing SEO maintenance"]
+    },
+    {
+      "id": "F-039",
+      "category": "Infrastructure",
+      "name": "Performance Monitoring",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement performance monitoring with Vercel Analytics and Web Vitals tracking.",
+      "acceptanceCriteria": [
+        "Vercel Analytics enabled",
+        "Web Vitals tracked (LCP, FID, CLS)",
+        "Performance dashboard accessible",
+        "Slow endpoints identified",
+        "Real user monitoring (RUM)"
+      ],
+      "testingSteps": [
+        "Enable Vercel Analytics",
+        "Visit site, generate some traffic",
+        "Check Vercel Analytics dashboard",
+        "Verify Web Vitals data",
+        "Identify slow pages"
+      ],
+      "technicalNotes": {
+        "vercel": "Enable in Vercel dashboard",
+        "webVitals": "next/web-vitals",
+        "customMetrics": "Add custom performance marks if needed"
+      },
+      "risks": ["Cost for high traffic"]
+    },
+    {
+      "id": "F-040",
+      "category": "Infrastructure",
+      "name": "Accessibility (a11y)",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Ensure WCAG 2.1 AA compliance: keyboard navigation, screen reader support, color contrast, ARIA labels.",
+      "acceptanceCriteria": [
+        "All interactive elements keyboard accessible",
+        "Screen reader friendly (ARIA labels)",
+        "Color contrast meets WCAG AA (4.5:1)",
+        "Form inputs have proper labels",
+        "Focus states visible",
+        "No keyboard traps",
+        "Alt text for all images"
+      ],
+      "testingSteps": [
+        "Navigate site with keyboard only",
+        "Test with screen reader (VoiceOver, NVDA)",
+        "Run axe DevTools audit",
+        "Check color contrast ratios",
+        "Verify form labels",
+        "Test focus states"
+      ],
+      "technicalNotes": {
+        "testing": "axe DevTools, Lighthouse accessibility audit",
+        "linting": "eslint-plugin-jsx-a11y",
+        "components": "Use semantic HTML"
+      },
+      "risks": ["Ongoing a11y testing needed"]
+    },
+    {
+      "id": "F-041",
+      "category": "Infrastructure",
+      "name": "Mobile App (React Native)",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 10,
+      "dependencies": [],
+      "description": "Build native mobile apps (iOS/Android) using React Native or Expo, sharing backend with web app.",
+      "acceptanceCriteria": [
+        "iOS app builds and runs",
+        "Android app builds and runs",
+        "Feature parity with web app (core features)",
+        "Push notifications",
+        "App store ready (icons, splash screen, etc.)",
+        "Published to App Store and Play Store"
+      ],
+      "testingSteps": [
+        "Build iOS app, test on device",
+        "Build Android app, test on device",
+        "Test all core features (auth, browse, inquiries, bookings)",
+        "Test push notifications",
+        "Submit to App Store and Play Store"
+      ],
+      "technicalNotes": {
+        "framework": "Expo or React Native CLI",
+        "backend": "Reuse Next.js API routes",
+        "pushNotifications": "Expo Notifications or FCM"
+      },
+      "risks": ["Large effort", "App store approval", "Maintenance overhead"]
+    },
+    {
+      "id": "F-042",
+      "category": "Infrastructure",
+      "name": "Caching Layer",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 2,
+      "dependencies": [],
+      "description": "Implement Redis caching for frequently accessed data (property listings, user sessions) to reduce database load.",
+      "acceptanceCriteria": [
+        "Redis instance set up (Upstash or Vercel KV)",
+        "Browse page results cached",
+        "Cache invalidation on property updates",
+        "Session data cached",
+        "Cache hit rate monitoring"
+      ],
+      "testingSteps": [
+        "Load browse page multiple times",
+        "Verify subsequent loads are faster",
+        "Update a property, verify cache invalidated",
+        "Check cache hit rate metrics",
+        "Test with cache disabled, verify still works"
+      ],
+      "technicalNotes": {
+        "redis": "Upstash Redis or Vercel KV",
+        "library": "ioredis or @upstash/redis",
+        "ttl": "Set appropriate TTL for different data types"
+      },
+      "risks": ["Cache consistency", "Redis cost", "Complexity"]
+    },
+    {
+      "id": "F-043",
+      "category": "Infrastructure",
+      "name": "Rate Limiting",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement rate limiting on API routes to prevent abuse and DDoS attacks.",
+      "acceptanceCriteria": [
+        "Rate limits on auth endpoints (5 req/min)",
+        "Rate limits on property creation (10 req/hour)",
+        "Rate limits on inquiry submission (5 req/hour)",
+        "429 Too Many Requests response",
+        "IP-based rate limiting",
+        "User-based rate limiting for authenticated routes"
+      ],
+      "testingSteps": [
+        "Make rapid API requests",
+        "Verify 429 response after limit",
+        "Wait for rate limit to reset",
+        "Verify requests work again",
+        "Test IP-based and user-based limits"
+      ],
+      "technicalNotes": {
+        "library": "upstash/ratelimit or express-rate-limit",
+        "storage": "Redis for rate limit state",
+        "middleware": "Apply to API routes"
+      },
+      "risks": ["Legitimate users hitting limits", "Redis dependency"]
+    },
+    {
+      "id": "F-044",
+      "category": "Infrastructure",
+      "name": "Data Backup & Recovery",
+      "priority": 2,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Set up automated database backups and recovery procedures.",
+      "acceptanceCriteria": [
+        "Daily automated backups",
+        "Backups stored in separate location",
+        "Backup retention policy (30 days)",
+        "Recovery procedure documented",
+        "Backup restoration tested"
+      ],
+      "testingSteps": [
+        "Trigger manual backup",
+        "Verify backup created",
+        "Test restoration process",
+        "Verify data integrity after restore",
+        "Check automated backup schedule"
+      ],
+      "technicalNotes": {
+        "supabase": "Use Supabase automated backups",
+        "manual": "pg_dump for manual backups",
+        "storage": "Store backups in S3 or Supabase Storage"
+      },
+      "risks": ["Backup cost", "Recovery time"]
+    },
+    {
+      "id": "F-045",
+      "category": "Infrastructure",
+      "name": "Feature Flags",
+      "priority": 3,
+      "passes": false,
+      "estimatedSessions": 1,
+      "dependencies": [],
+      "description": "Implement feature flag system for gradual rollouts and A/B testing using LaunchDarkly or similar.",
+      "acceptanceCriteria": [
+        "Feature flag service integrated",
+        "Admin can toggle features on/off",
+        "Feature flags work for server and client",
+        "Percentage rollouts supported",
+        "User targeting (enable for specific users)"
+      ],
+      "testingSteps": [
+        "Create a feature flag",
+        "Toggle feature on/off",
+        "Verify feature visibility changes",
+        "Test percentage rollout",
+        "Test user targeting"
+      ],
+      "technicalNotes": {
+        "service": "LaunchDarkly, Flagsmith, or Vercel Feature Flags",
+        "sdk": "Provider SDK",
+        "ssr": "Ensure flags work with SSR"
+      },
+      "risks": ["Service cost", "Flag cleanup over time"]
+    }
+  ]
+}
