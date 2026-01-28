@@ -22,12 +22,12 @@ export default function Home() {
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#browse" className="text-gray-700 hover:text-[#5B3DF0] transition-colors font-medium">
+              <Link href="/browse" className="text-gray-700 hover:text-[#5B3DF0] transition-colors font-medium">
                 Browse
-              </a>
-              <a href="#how-it-works" className="text-gray-700 hover:text-[#5B3DF0] transition-colors font-medium">
+              </Link>
+              <Link href="/how-it-works" className="text-gray-700 hover:text-[#5B3DF0] transition-colors font-medium">
                 How It Works
-              </a>
+              </Link>
               <a href="#about" className="text-gray-700 hover:text-[#5B3DF0] transition-colors font-medium">
                 About
               </a>

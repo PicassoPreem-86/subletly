@@ -40,6 +40,12 @@ export default function Header({ variant = 'light' }: HeaderProps) {
             >
               Browse Properties
             </Link>
+            <Link
+              href="/how-it-works"
+              className="text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+            >
+              How It Works
+            </Link>
             {session?.user?.accountType === 'LANDLORD' && (
               <Link
                 href="/dashboard/landlord/properties/new"
