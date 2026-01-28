@@ -1,18 +1,90 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-export default function LoginPage() {
+type AccountCheckResult = {
+  hasRenter: boolean;
+  hasLandlord: boolean;
+  accountCount: number;
+};
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedAccountType, setSelectedAccountType] = useState<'RENTER' | 'LANDLORD' | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [error, setError] = useState('');
+  const [accountCheck, setAccountCheck] = useState<AccountCheckResult | null>(null);
+  const [showPasswordField, setShowPasswordField] = useState(false);
+
+  // Check for success message from signup
+  const message = searchParams.get('message');
+
+  // Check which accounts exist for this email
+  const checkEmailAccounts = async (emailToCheck: string) => {
+    if (!emailToCheck || !emailToCheck.includes('@')) {
+      setAccountCheck(null);
+      setShowPasswordField(false);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailToCheck }),
+      });
+
+      if (response.ok) {
+        const data: AccountCheckResult = await response.json();
+        setAccountCheck(data);
+
+        // If only one account type exists, auto-select it
+        if (data.accountCount === 1) {
+          if (data.hasRenter) setSelectedAccountType('RENTER');
+          if (data.hasLandlord) setSelectedAccountType('LANDLORD');
+          setShowPasswordField(true);
+        } else if (data.accountCount > 1) {
+          // Multiple accounts - user must choose
+          setSelectedAccountType(null);
+          setShowPasswordField(false);
+        } else {
+          // No accounts found
+          setShowPasswordField(true);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking email:', err);
+      setShowPasswordField(true);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // Debounce email check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (email) {
+        checkEmailAccounts(email);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  const handleAccountTypeSelect = (type: 'RENTER' | 'LANDLORD') => {
+    setSelectedAccountType(type);
+    setShowPasswordField(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +95,7 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         email,
         password,
+        accountType: selectedAccountType || undefined,
         redirect: false,
       });
 
@@ -42,7 +115,6 @@ export default function LoginPage() {
       } else if (session?.user?.accountType === 'RENTER') {
         router.push('/dashboard/renter');
       } else {
-        // Default to landlord dashboard if account type is not set
         router.push('/dashboard/landlord');
       }
 
@@ -52,6 +124,8 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const needsAccountSelection = accountCheck && accountCheck.accountCount > 1 && !selectedAccountType;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-teal-50 flex flex-col">
@@ -93,6 +167,12 @@ export default function LoginPage() {
               </p>
             </div>
 
+            {message && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-600">{message}</p>
+              </div>
+            )}
+
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{error}</p>
@@ -105,59 +185,121 @@ export default function LoginPage() {
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-900"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-900"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
+                <div className="relative">
                   <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-900"
+                    placeholder="you@example.com"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Remember me</span>
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
-                >
-                  Forgot password?
-                </Link>
+                  {isCheckingEmail && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Account Type Selector (only shown if multiple accounts exist) */}
+              {accountCheck && accountCheck.accountCount > 1 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Account
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {accountCheck.hasRenter && (
+                      <button
+                        type="button"
+                        onClick={() => handleAccountTypeSelect('RENTER')}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          selectedAccountType === 'RENTER'
+                            ? 'border-purple-600 bg-purple-50 text-purple-700'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <span className="font-semibold">Renter</span>
+                        </div>
+                      </button>
+                    )}
+                    {accountCheck.hasLandlord && (
+                      <button
+                        type="button"
+                        onClick={() => handleAccountTypeSelect('LANDLORD')}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          selectedAccountType === 'LANDLORD'
+                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          <span className="font-semibold">Landlord</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500 text-center">
+                    You have multiple accounts with this email
+                  </p>
+                </div>
+              )}
+
+              {/* Password (shown after email check or account selection) */}
+              {showPasswordField && (
+                <>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-gray-900"
+                      placeholder="••••••••"
+                      autoFocus={accountCheck !== null}
+                    />
+                  </div>
+
+                  {/* Remember Me & Forgot Password */}
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Remember me</span>
+                    </label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                </>
+              )}
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || needsAccountSelection || !showPasswordField}
                 className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Logging in...' : 'Log In'}
+                {isLoading ? 'Logging in...' : needsAccountSelection ? 'Select an Account' : 'Log In'}
               </button>
             </form>
 
@@ -220,5 +362,26 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoginLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-teal-50">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Export with Suspense boundary for useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   );
 }

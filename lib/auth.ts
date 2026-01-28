@@ -38,6 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        accountType: { label: 'Account Type', type: 'text' }, // RENTER or LANDLORD
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -59,12 +60,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        // Step 2: Fetch user data from database
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string,
-          },
-        });
+        // Step 2: Fetch user data from database using compound unique (email + accountType)
+        // If accountType is provided, use it; otherwise, find any account with this email
+        let user;
+        if (credentials.accountType && (credentials.accountType === 'RENTER' || credentials.accountType === 'LANDLORD')) {
+          // Login with specific account type (compound unique lookup)
+          user = await prisma.user.findUnique({
+            where: {
+              email_accountType: {
+                email: credentials.email as string,
+                accountType: credentials.accountType as 'RENTER' | 'LANDLORD',
+              },
+            },
+          });
+        } else {
+          // No account type specified - find the first account with this email
+          // This handles backwards compatibility and single-account users
+          user = await prisma.user.findFirst({
+            where: {
+              email: credentials.email as string,
+            },
+          });
+        }
 
         if (!user) {
           console.error('User not found in database after Supabase Auth success');

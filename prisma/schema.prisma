@@ -38,15 +38,16 @@ enum InquiryStatus {
 }
 
 // User Model
+// Note: Same email can have two accounts (one RENTER, one LANDLORD) - they are separate users
 model User {
   id            String      @id @default(cuid())
-  email         String      @unique
+  email         String      // NOT unique alone - compound unique with accountType below
   emailVerified DateTime?
   password      String
   firstName     String
   lastName      String
   phone         String?
-  accountType   AccountType
+  accountType   AccountType // Required, permanently set at signup
   image         String?
   bio           String?
 
@@ -64,6 +65,7 @@ model User {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  @@unique([email, accountType])  // Same email can have RENTER + LANDLORD accounts
   @@index([email])
 }
 

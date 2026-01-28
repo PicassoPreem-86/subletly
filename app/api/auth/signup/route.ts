@@ -23,14 +23,19 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = signupSchema.parse(body);
 
-    // Check if user already exists in database
+    // Check if user already exists with this email AND account type (compound unique)
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+      where: {
+        email_accountType: {
+          email: validatedData.email,
+          accountType: validatedData.accountType,
+        },
+      },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: `A ${validatedData.accountType.toLowerCase()} account already exists with this email` },
         { status: 400 }
       );
     }

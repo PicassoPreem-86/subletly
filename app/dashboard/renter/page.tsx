@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Header from '@/components/Header';
 
 interface SavedProperty {
   id: string;
@@ -46,6 +47,11 @@ export default function RenterDashboard() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user) {
+      // Role guard: If logged in as LANDLORD, redirect to landlord dashboard
+      if (session.user.accountType === 'LANDLORD') {
+        router.push('/dashboard/landlord');
+        return;
+      }
       fetchData();
     }
   }, [session, status, router]);
@@ -85,49 +91,14 @@ export default function RenterDashboard() {
     );
   }
 
-  if (!session?.user) {
+  if (!session?.user || session.user.accountType !== 'RENTER') {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-24 items-center justify-between">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/subletly-logo.png"
-                alt="Subletly"
-                width={400}
-                height={100}
-                className="h-20 w-auto"
-                priority
-              />
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/browse"
-                className="hidden sm:block px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
-              >
-                Browse Properties
-              </Link>
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">
-                  {session.user.firstName} {session.user.lastName}
-                </p>
-                <p className="text-xs text-gray-500">{session.user.email}</p>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
