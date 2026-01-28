@@ -71,8 +71,8 @@ export default function BrowsePage() {
     try {
       const response = await fetch('/api/properties');
       const data = await response.json();
-      setProperties(data.properties || []);
-      setFilteredProperties(data.properties || []);
+      setProperties(data.data || []);
+      setFilteredProperties(data.data || []);
     } catch (error) {
       console.error('Failed to fetch properties:', error);
     } finally {
