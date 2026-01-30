@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '@/components/Header';
+import { TRUST_DEFINITIONS, PropertyStatusKey } from '@/lib/constants/trustDefinitions';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface Property {
   id: string;
@@ -31,11 +32,6 @@ export default function LandlordDashboard() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user) {
-      // Role guard: If logged in as RENTER, redirect to renter dashboard
-      if (session.user.accountType === 'RENTER') {
-        router.push('/dashboard/renter');
-        return;
-      }
       fetchProperties();
     }
   }, [session, status, router]);
@@ -63,14 +59,43 @@ export default function LandlordDashboard() {
     );
   }
 
-  if (!session?.user || session.user.accountType !== 'LANDLORD') {
+  if (!session?.user) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <Header />
+      <header className="bg-white shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-24 items-center justify-between">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/subletly-logo.png"
+                alt="Subletly"
+                width={400}
+                height={100}
+                className="h-20 w-auto"
+                priority
+              />
+            </Link>
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-gray-900">
+                  {session.user.firstName} {session.user.lastName}
+                </p>
+                <p className="text-xs text-gray-500">{session.user.email}</p>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
@@ -134,6 +159,40 @@ export default function LandlordDashboard() {
           </div>
         </div>
 
+        {/* Listing Status Guide */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Listing Status Guide
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {(Object.keys(TRUST_DEFINITIONS.listingStatus) as PropertyStatusKey[]).map((statusKey) => {
+              const statusDef = TRUST_DEFINITIONS.listingStatus[statusKey];
+              const colorClasses: Record<string, string> = {
+                gray: 'bg-gray-100 border-gray-200 text-gray-700',
+                yellow: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+                green: 'bg-green-50 border-green-200 text-green-700',
+                blue: 'bg-blue-50 border-blue-200 text-blue-700',
+                red: 'bg-red-50 border-red-200 text-red-700',
+              };
+              return (
+                <div
+                  key={statusKey}
+                  className={`p-3 rounded-lg border ${colorClasses[statusDef.color]} flex flex-col`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm font-semibold">{statusDef.label}</span>
+                    <InfoTooltip content={statusDef.description} size="sm" />
+                  </div>
+                  <p className="text-xs opacity-80 line-clamp-2">{statusDef.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Actions Bar */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">My Listings</h2>
@@ -180,14 +239,25 @@ export default function LandlordDashboard() {
                     />
                   ) : null}
                   <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                      property.status === 'DRAFT' ? 'bg-gray-100 text-gray-700' :
-                      property.status === 'RENTED' ? 'bg-blue-100 text-blue-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {property.status}
-                    </span>
+                    {(() => {
+                      const statusKey = property.status as PropertyStatusKey;
+                      const statusDef = TRUST_DEFINITIONS.listingStatus[statusKey];
+                      const colorClasses: Record<string, string> = {
+                        gray: 'bg-gray-100 text-gray-700',
+                        yellow: 'bg-yellow-100 text-yellow-700',
+                        green: 'bg-green-100 text-green-700',
+                        blue: 'bg-blue-100 text-blue-700',
+                        red: 'bg-red-100 text-red-700',
+                      };
+                      return (
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${colorClasses[statusDef?.color || 'gray']}`}>
+                          {statusDef?.label || property.status}
+                          {statusDef && (
+                            <InfoTooltip content={statusDef.description} size="sm" />
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="p-6">

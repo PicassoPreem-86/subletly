@@ -18,7 +18,8 @@ enum AccountType {
 
 enum PropertyStatus {
   DRAFT
-  ACTIVE
+  PENDING_REVIEW  // Submitted for review, awaiting approval
+  ACTIVE          // Approved and visible to guests
   RENTED
   INACTIVE
 }

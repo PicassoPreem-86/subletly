@@ -79,7 +79,7 @@ export default function Home() {
           </h1>
 
           <p className="text-xl sm:text-2xl text-white/90 mb-12 max-w-3xl mx-auto font-light">
-            A tech platform connecting verified sublessors and sublessees in NYC & Atlanta.<br />
+            A tech platform connecting verified hosts and guests in NYC & Atlanta.<br />
             <span className="text-white/80">Trust, transparency, and legal compliance built-in.</span>
           </p>
 
@@ -185,6 +185,64 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Safer Alternative Section */}
+      <section className="py-16 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              A Safer Alternative to Facebook Housing Groups
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Stop scrolling through unmoderated posts and messaging anonymous strangers
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="font-semibold text-gray-700 pb-3 border-b-2 border-gray-200">Feature</div>
+              <div className="font-semibold text-[#5B3DF0] pb-3 border-b-2 border-[#5B3DF0]">Subletly</div>
+              <div className="font-semibold text-gray-400 pb-3 border-b-2 border-gray-200">FB Groups</div>
+
+              {/* Row 1 */}
+              <div className="py-4 text-left text-gray-700 border-b border-gray-100">Identity Verification</div>
+              <div className="py-4 border-b border-gray-100">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Verified IDs
+                </span>
+              </div>
+              <div className="py-4 border-b border-gray-100 text-gray-400 text-sm">Anonymous strangers</div>
+
+              {/* Row 2 */}
+              <div className="py-4 text-left text-gray-700 border-b border-gray-100">Payment Protection</div>
+              <div className="py-4 border-b border-gray-100">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Escrow Protection
+                </span>
+              </div>
+              <div className="py-4 border-b border-gray-100 text-gray-400 text-sm">Direct Venmo/Zelle</div>
+
+              {/* Row 3 */}
+              <div className="py-4 text-left text-gray-700">Listing Quality</div>
+              <div className="py-4">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Reviewed Listings
+                </span>
+              </div>
+              <div className="py-4 text-gray-400 text-sm">Unmoderated posts</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section id="how-it-works" className="py-20 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -210,7 +268,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">1. Get Verified</h3>
               <p className="text-gray-600">
-                Complete ID, phone, and property verification. Earn &quot;Verified Landlord&quot; or &quot;Verified Renter&quot; badges for enhanced trust.
+                Complete ID, phone, and property verification. Earn &quot;Verified Host&quot; or &quot;Verified Guest&quot; badges for enhanced trust.
               </p>
             </div>
 
@@ -378,7 +436,7 @@ export default function Home() {
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">Dual-Sided Verification</h3>
                 <p className="text-gray-600">
-                  Unlike other platforms, we verify BOTH parties. Earn &quot;Verified Landlord,&quot; &quot;Trusted Landlord,&quot; or &quot;Verified Renter&quot; badges through our multi-layer vetting process.
+                  Unlike other platforms, we verify BOTH parties. Earn &quot;Verified Host,&quot; &quot;Trusted Host,&quot; or &quot;Verified Guest&quot; badges through our multi-layer vetting process.
                 </p>
               </div>
             </div>

@@ -2,7 +2,9 @@
 
 import { Property } from '@/types/property';
 import { formatPrice, formatDate } from '@/lib/utils/propertyHelpers';
-import { Calendar, DollarSign } from 'lucide-react';
+import { Calendar, DollarSign, Shield } from 'lucide-react';
+import InfoTooltip from '@/components/ui/InfoTooltip';
+import { TRUST_DEFINITIONS } from '@/lib/constants/trustDefinitions';
 
 interface PriceCardProps {
   property: Property;
@@ -59,11 +61,21 @@ export default function PriceCard({ property, onContactClick }: PriceCardProps) 
         )}
       </div>
 
+      {/* Escrow Protection Badge */}
+      <div className="flex items-center justify-center gap-2 mb-4 py-2 px-3 bg-green-50 rounded-lg border border-green-200">
+        <Shield className="w-5 h-5 text-green-600" />
+        <span className="text-sm font-medium text-green-700">Protected by Escrow</span>
+        <InfoTooltip
+          title={TRUST_DEFINITIONS.escrow.title}
+          content={TRUST_DEFINITIONS.escrow.fullDescription}
+        />
+      </div>
+
       <button
         onClick={onContactClick}
         className="w-full bg-purple-600 text-white py-3.5 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg"
       >
-        Contact Landlord
+        Contact Host
       </button>
 
       <p className="text-xs text-center text-gray-500 mt-4">
