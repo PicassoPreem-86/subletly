@@ -1,24 +1,72 @@
 import { PrismaClient, PropertyType, PropertyStatus, AccountType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// Load .env.local for Supabase variables
+config({ path: '.env.local' });
 
 const prisma = new PrismaClient();
+
+// Initialize Supabase Admin client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing Supabase environment variables for seeding');
+}
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 async function main() {
   console.log('🌱 Starting database seed...');
 
   // Create sample landlord user
   const hashedPassword = await bcrypt.hash('password123', 10);
+  const landlordEmail = 'landlord@subletly.com';
+  const landlordPassword = 'password123';
 
+  // Step 1: Create user in Supabase Auth
+  console.log('Creating user in Supabase Auth...');
+
+  // First, try to delete existing user if any (for idempotent seeding)
+  const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+  const existingUser = existingUsers?.users?.find(u => u.email === landlordEmail);
+  if (existingUser) {
+    await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+    console.log('  - Deleted existing Supabase Auth user');
+  }
+
+  // Create new user in Supabase Auth
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: landlordEmail,
+    password: landlordPassword,
+    email_confirm: true, // Auto-confirm email
+  });
+
+  if (authError) {
+    console.error('Failed to create Supabase Auth user:', authError.message);
+    throw authError;
+  }
+
+  console.log('  - Created Supabase Auth user:', authData.user?.id);
+
+  // Step 2: Create user in Prisma database
   const landlord = await prisma.user.upsert({
     where: {
       email_accountType: {
-        email: 'landlord@subletly.com',
+        email: landlordEmail,
         accountType: AccountType.LANDLORD
       }
     },
     update: {},
     create: {
-      email: 'landlord@subletly.com',
+      email: landlordEmail,
       password: hashedPassword,
       firstName: 'John',
       lastName: 'Landlord',
@@ -29,7 +77,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Created landlord user');
+  console.log('✓ Created landlord user (Supabase Auth + Database)');
 
   // Sample properties data
   const properties = [
