@@ -98,6 +98,15 @@ export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Wait for session to load
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
   // Redirect if not logged in or not a landlord
   if (status === 'unauthenticated') {
     router.push('/login');

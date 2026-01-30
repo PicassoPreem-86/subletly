@@ -3,6 +3,14 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
   webpack: (config, { isServer, nextRuntime }) => {
     // Exclude bcrypt and @prisma/client from middleware bundle
     if (nextRuntime === 'edge') {

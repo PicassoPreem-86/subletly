@@ -62,6 +62,7 @@ model User {
   properties       Property[]        // Only for landlords
   savedProperties  SavedProperty[]   // For renters
   sentInquiries    Inquiry[]         @relation("RenterInquiries")
+  sentMessages     Message[]         @relation("SentMessages")
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -193,22 +194,42 @@ model SavedProperty {
 
 // Inquiries (Contact Landlord)
 model Inquiry {
-  id          String        @id @default(cuid())
-  propertyId  String
-  renterId    String
+  id            String        @id @default(cuid())
+  propertyId    String
+  renterId      String
 
-  message     String
-  phone       String?
-  moveInDate  DateTime?
-  status      InquiryStatus @default(PENDING)
+  message       String
+  phone         String?
+  moveInDate    DateTime?
+  status        InquiryStatus @default(PENDING)
+  lastMessageAt DateTime?     // For sorting by recent activity
 
-  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  renter      User          @relation("RenterInquiries", fields: [renterId], references: [id], onDelete: Cascade)
+  property      Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  renter        User          @relation("RenterInquiries", fields: [renterId], references: [id], onDelete: Cascade)
+  messages      Message[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([renterId])
   @@index([propertyId])
   @@index([status])
+  @@index([lastMessageAt])
+}
+
+// Messages for conversation threading
+model Message {
+  id          String    @id @default(cuid())
+  inquiryId   String
+  senderId    String
+  content     String
+  readAt      DateTime?
+
+  inquiry     Inquiry   @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([inquiryId])
+  @@index([senderId])
 }

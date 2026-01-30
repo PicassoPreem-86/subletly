@@ -22,27 +22,53 @@ interface Property {
   createdAt: string;
 }
 
+interface InquiryPreview {
+  id: string;
+  status: string;
+  createdAt: string;
+  unreadCount: number;
+  renter: {
+    firstName: string;
+    lastName: string;
+  };
+  property: {
+    title: string;
+  };
+}
+
 export default function LandlordDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [inquiries, setInquiries] = useState<InquiryPreview[]>([]);
+  const [totalUnread, setTotalUnread] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user) {
-      fetchProperties();
+      fetchData();
     }
   }, [session, status, router]);
 
-  const fetchProperties = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/properties/my-listings');
-      const data = await response.json();
-      setProperties(data.properties || []);
+      const [propertiesRes, inquiriesRes] = await Promise.all([
+        fetch('/api/properties/my-listings'),
+        fetch('/api/landlord/inquiries'),
+      ]);
+
+      const propertiesData = await propertiesRes.json();
+      setProperties(propertiesData.properties || []);
+
+      if (inquiriesRes.ok) {
+        const inquiriesData = await inquiriesRes.json();
+        setInquiries(inquiriesData.inquiries?.slice(0, 5) || []);
+        setTotalUnread(inquiriesData.totalUnread || 0);
+      }
     } catch (error) {
-      console.error('Failed to fetch properties:', error);
+      console.error('Failed to fetch data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +136,7 @@ export default function LandlordDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -157,6 +183,27 @@ export default function LandlordDashboard() {
               </div>
             </div>
           </div>
+
+          <Link href="/dashboard/landlord/inquiries" className="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Inquiries</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-3xl font-bold text-gray-900">{inquiries.length}</p>
+                  {totalUnread > 0 && (
+                    <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded-full">
+                      {totalUnread} new
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Listing Status Guide */}
@@ -192,6 +239,79 @@ export default function LandlordDashboard() {
             })}
           </div>
         </div>
+
+        {/* Recent Inquiries */}
+        {inquiries.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                Recent Inquiries
+                {totalUnread > 0 && (
+                  <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded-full">
+                    {totalUnread} unread
+                  </span>
+                )}
+              </h3>
+              <Link
+                href="/dashboard/landlord/inquiries"
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                View All →
+              </Link>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {inquiries.map((inquiry) => (
+                <Link
+                  key={inquiry.id}
+                  href={`/dashboard/landlord/inquiries/${inquiry.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center relative">
+                      <span className="text-purple-600 font-semibold text-sm">
+                        {inquiry.renter.firstName.charAt(0)}{inquiry.renter.lastName.charAt(0)}
+                      </span>
+                      {inquiry.unreadCount > 0 && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">{inquiry.unreadCount}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className={`font-medium ${inquiry.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                        {inquiry.renter.firstName} {inquiry.renter.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                        {inquiry.property.title}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      inquiry.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                      inquiry.status === 'RESPONDED' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {inquiry.status}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(inquiry.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions Bar */}
         <div className="flex items-center justify-between mb-6">
