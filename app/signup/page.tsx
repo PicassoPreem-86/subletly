@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,6 +18,7 @@ export default function SignUpPage() {
   const [accountType, setAccountType] = useState<'renter' | 'landlord'>('renter');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -27,21 +31,62 @@ export default function SignUpPage() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
 
     if (!acceptTerms) {
-      alert('Please accept the Terms of Service and Privacy Policy');
+      setError('Please accept the Terms of Service and Privacy Policy');
       return;
     }
 
     setIsLoading(true);
+    setError('');
 
-    // TODO: Implement actual signup logic
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Call signup API
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          accountType: accountType === 'renter' ? 'RENTER' : 'LANDLORD',
+        }),
+      });
 
-    setIsLoading(false);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Something went wrong');
+        setIsLoading(false);
+        return;
+      }
+
+      // Auto-login after successful signup
+      const signInResult = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        accountType: accountType === 'renter' ? 'RENTER' : 'LANDLORD',
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // Signup succeeded but login failed - redirect to login page
+        router.push('/login?message=Account created, please login');
+      } else {
+        // Success - redirect to appropriate dashboard
+        router.push(accountType === 'landlord' ? '/dashboard/landlord' : '/dashboard/renter');
+        router.refresh();
+      }
+    } catch {
+      setError('An error occurred. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const getPasswordStrength = (password: string) => {
@@ -93,6 +138,12 @@ export default function SignUpPage() {
                 Join thousands of verified hosts and guests
               </p>
             </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
 
             {/* Account Type Selector */}
             <div className="mb-8">
