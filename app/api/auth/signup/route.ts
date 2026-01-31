@@ -4,6 +4,13 @@ import { hash } from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { supabaseAdmin } from '@/lib/supabase';
 import { z } from 'zod';
+import {
+  getClientIP,
+  checkRateLimit,
+  RATE_LIMITS,
+  rateLimitResponse,
+  addRateLimitHeaders,
+} from '@/lib/rate-limit';
 
 // Validation schema
 const signupSchema = z.object({
@@ -17,6 +24,14 @@ const signupSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Rate limit by IP: 5 signups per day
+  const ip = getClientIP(request);
+  const rateLimitResult = checkRateLimit(`signup:${ip}`, RATE_LIMITS.signup);
+
+  if (!rateLimitResult.success) {
+    return rateLimitResponse(rateLimitResult);
+  }
+
   try {
     const body = await request.json();
 
@@ -34,10 +49,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: `A ${validatedData.accountType.toLowerCase()} account already exists with this email` },
         { status: 400 }
       );
+      return addRateLimitHeaders(response, rateLimitResult);
     }
 
     // Step 1: Create user in Supabase Auth
@@ -54,10 +70,11 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData.user) {
       console.error('Supabase Auth error:', authError);
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: authError?.message || 'Failed to create auth user' },
         { status: 500 }
       );
+      return addRateLimitHeaders(response, rateLimitResult);
     }
 
     // Step 2: Hash password for database
@@ -83,13 +100,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('✅ User created successfully:');
+    console.log('User created successfully:');
     console.log('  - Supabase Auth ID:', authData.user.id);
     console.log('  - Database ID:', user.id);
     console.log('  - Email:', user.email);
     console.log('  - Account Type:', user.accountType);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'User created successfully',
         user,
@@ -97,18 +114,21 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    return addRateLimitHeaders(response, rateLimitResult);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Validation error', details: error.issues },
         { status: 400 }
       );
+      return addRateLimitHeaders(response, rateLimitResult);
     }
 
     console.error('Signup error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    return addRateLimitHeaders(response, rateLimitResult);
   }
 }
