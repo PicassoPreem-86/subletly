@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { sendNewMessageNotification } from '@/lib/email';
 
 const messageSchema = z.object({
   content: z.string().min(1, 'Message cannot be empty').max(2000, 'Message is too long'),
@@ -33,6 +34,21 @@ export async function POST(
         property: {
           select: {
             landlordId: true,
+            title: true,
+            landlord: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        renter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
           },
         },
       },
@@ -85,6 +101,36 @@ export async function POST(
         },
       }),
     ]);
+
+    // Send email notification to the recipient (non-blocking)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const senderName = `${session.user.firstName} ${session.user.lastName}`;
+
+    if (isLandlord) {
+      // Landlord sent a message, notify the renter
+      sendNewMessageNotification({
+        recipientEmail: inquiry.renter.email,
+        recipientName: inquiry.renter.firstName,
+        senderName,
+        propertyTitle: inquiry.property.title,
+        messagePreview: validatedData.content,
+        conversationUrl: `${baseUrl}/dashboard/renter/inquiries/${inquiryId}`,
+      }).catch((err) => {
+        console.error('Failed to send message notification email:', err);
+      });
+    } else {
+      // Renter sent a message, notify the landlord
+      sendNewMessageNotification({
+        recipientEmail: inquiry.property.landlord.email,
+        recipientName: inquiry.property.landlord.firstName,
+        senderName,
+        propertyTitle: inquiry.property.title,
+        messagePreview: validatedData.content,
+        conversationUrl: `${baseUrl}/dashboard/landlord/inquiries/${inquiryId}`,
+      }).catch((err) => {
+        console.error('Failed to send message notification email:', err);
+      });
+    }
 
     return NextResponse.json({
       message,

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useSendMessage } from '@/hooks/useConversation';
 
 interface ReplyFormProps {
   inquiryId: string;
-  onMessageSent: () => void;
+  onMessageSent?: () => void;
   placeholder?: string;
 }
 
@@ -14,8 +15,9 @@ export default function ReplyForm({
   placeholder = 'Type your message...',
 }: ReplyFormProps) {
   const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { mutate: sendMessage, isPending: isSubmitting } = useSendMessage(inquiryId);
 
   const maxLength = 2000;
   const remainingChars = maxLength - content.length;
@@ -25,30 +27,17 @@ export default function ReplyForm({
 
     if (!content.trim() || isSubmitting) return;
 
-    setIsSubmitting(true);
     setError(null);
 
-    try {
-      const response = await fetch(`/api/inquiries/${inquiryId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: content.trim() }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to send message');
-      }
-
-      setContent('');
-      onMessageSent();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
-    } finally {
-      setIsSubmitting(false);
-    }
+    sendMessage(content.trim(), {
+      onSuccess: () => {
+        setContent('');
+        onMessageSent?.();
+      },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Failed to send message');
+      },
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -68,13 +57,18 @@ export default function ReplyForm({
 
       <div className="flex items-end gap-3">
         <div className="flex-1 relative">
+          <label htmlFor="reply-message" className="sr-only">
+            Message
+          </label>
           <textarea
+            id="reply-message"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             maxLength={maxLength}
             rows={3}
+            aria-describedby="reply-hint"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
             disabled={isSubmitting}
           />
@@ -109,7 +103,7 @@ export default function ReplyForm({
         </button>
       </div>
 
-      <p className="mt-2 text-xs text-gray-500">
+      <p id="reply-hint" className="mt-2 text-xs text-gray-500">
         Press Enter to send, Shift+Enter for new line
       </p>
     </form>

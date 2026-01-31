@@ -71,7 +71,7 @@ export default function LoginPage() {
               href="/signup"
               className="text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
             >
-              Don't have an account? <span className="text-purple-600">Sign Up</span>
+              Don&apos;t have an account? <span className="text-purple-600">Sign Up</span>
             </Link>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function LoginPage() {
 
           {/* Sign Up Link */}
           <p className="text-center mt-6 text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-medium text-purple-600 hover:text-purple-700 transition-colors">
               Sign up for free
             </Link>

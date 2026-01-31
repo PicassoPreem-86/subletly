@@ -82,10 +82,11 @@ export default function ContactForm({ propertyId, onClose }: ContactFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-1">
             Message *
           </label>
           <textarea
+            id="contact-message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             required
@@ -96,10 +97,11 @@ export default function ContactForm({ propertyId, onClose }: ContactFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1">
             Phone (optional)
           </label>
           <input
+            id="contact-phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -109,10 +111,11 @@ export default function ContactForm({ propertyId, onClose }: ContactFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="contact-moveInDate" className="block text-sm font-medium text-gray-700 mb-1">
             Desired Move-in Date (optional)
           </label>
           <input
+            id="contact-moveInDate"
             type="date"
             value={moveInDate}
             onChange={(e) => setMoveInDate(e.target.value)}

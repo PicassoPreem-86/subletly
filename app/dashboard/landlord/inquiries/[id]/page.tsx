@@ -1,93 +1,32 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ConversationThread from '@/components/messaging/ConversationThread';
 import ReplyForm from '@/components/messaging/ReplyForm';
-
-interface InquiryData {
-  id: string;
-  message: string;
-  phone: string | null;
-  moveInDate: string | null;
-  status: string;
-  createdAt: string;
-  property: {
-    id: string;
-    title: string;
-    city: string;
-    state: string;
-    monthlyRent: number;
-    images: string;
-    landlordId: string;
-    landlord: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      image: string | null;
-    };
-  };
-  renter: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    image: string | null;
-  };
-  messages: Array<{
-    id: string;
-    content: string;
-    readAt: string | null;
-    createdAt: string;
-    sender: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      image: string | null;
-    };
-  }>;
-}
+import { useConversation, useMarkAsRead } from '@/hooks/useConversation';
 
 export default function LandlordConversationPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session, status } = useSession();
-  const [inquiry, setInquiry] = useState<InquiryData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const inquiryId = params.id as string;
+  const isLandlord = session?.user?.accountType === 'LANDLORD';
 
-  const fetchInquiry = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/inquiries/${inquiryId}`);
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to load conversation');
-      }
-      const data = await response.json();
-      setInquiry(data.inquiry);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load conversation');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [inquiryId]);
+  const {
+    data,
+    isLoading: queryLoading,
+    error: queryError,
+  } = useConversation(inquiryId, !!session?.user && isLandlord);
 
-  const markAsRead = useCallback(async () => {
-    try {
-      await fetch(`/api/inquiries/${inquiryId}/read`, {
-        method: 'PATCH',
-      });
-    } catch (err) {
-      console.error('Failed to mark as read:', err);
-    }
-  }, [inquiryId]);
+  const inquiry = data?.inquiry;
+  const error = queryError?.message;
+
+  const { mutate: markAsRead } = useMarkAsRead(inquiryId);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -95,17 +34,18 @@ export default function LandlordConversationPage() {
     } else if (session?.user) {
       if (session.user.accountType !== 'LANDLORD') {
         router.push('/dashboard/renter');
-        return;
       }
-      fetchInquiry().then(() => markAsRead());
     }
-  }, [session, status, router, fetchInquiry, markAsRead]);
+  }, [session, status, router]);
 
-  const handleMessageSent = () => {
-    fetchInquiry();
-  };
+  // Mark as read when conversation loads
+  useEffect(() => {
+    if (inquiry && session?.user) {
+      markAsRead();
+    }
+  }, [inquiry, session?.user, markAsRead]);
 
-  if (status === 'loading' || isLoading) {
+  if (status === 'loading' || queryLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -201,7 +141,6 @@ export default function LandlordConversationPage() {
               {/* Reply Form */}
               <ReplyForm
                 inquiryId={inquiry.id}
-                onMessageSent={handleMessageSent}
                 placeholder={`Reply to ${inquiry.renter.firstName}...`}
               />
             </div>

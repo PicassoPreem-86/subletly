@@ -148,7 +148,7 @@ export default function SignUpPage() {
             {/* Account Type Selector */}
             <div className="mb-8">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                I'm signing up as a
+                I&apos;m signing up as a
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <button

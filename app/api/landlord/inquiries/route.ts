@@ -73,24 +73,30 @@ export async function GET(_request: NextRequest) {
       ],
     });
 
-    // Calculate unread count for each inquiry
-    const inquiriesWithUnread = await Promise.all(
-      inquiries.map(async (inquiry) => {
-        const unreadCount = await prisma.message.count({
-          where: {
-            inquiryId: inquiry.id,
-            senderId: { not: session.user.id }, // Messages not sent by landlord
-            readAt: null,
-          },
-        });
+    // Calculate unread count for all inquiries in a single query (fixes N+1)
+    const inquiryIds = inquiries.map((i) => i.id);
+    const unreadCounts = await prisma.message.groupBy({
+      by: ['inquiryId'],
+      where: {
+        inquiryId: { in: inquiryIds },
+        senderId: { not: session.user.id }, // Messages not sent by landlord
+        readAt: null,
+      },
+      _count: {
+        id: true,
+      },
+    });
 
-        return {
-          ...inquiry,
-          unreadCount,
-          lastMessage: inquiry.messages[0] || null,
-        };
-      })
+    // Create a map for quick lookup
+    const unreadCountMap = new Map(
+      unreadCounts.map((item) => [item.inquiryId, item._count.id])
     );
+
+    const inquiriesWithUnread = inquiries.map((inquiry) => ({
+      ...inquiry,
+      unreadCount: unreadCountMap.get(inquiry.id) || 0,
+      lastMessage: inquiry.messages[0] || null,
+    }));
 
     // Get total unread count across all inquiries
     const totalUnread = inquiriesWithUnread.reduce(

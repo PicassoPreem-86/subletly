@@ -37,6 +37,7 @@ export default function PropertyCard({
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   // Images are now native arrays from PostgreSQL
   const images = property.images || [];
@@ -52,6 +53,7 @@ export default function PropertyCard({
     }
 
     setIsSaving(true);
+    setSaveError(false);
 
     try {
       if (isSaved) {
@@ -62,6 +64,9 @@ export default function PropertyCard({
 
         if (response.ok) {
           onSaveToggle?.(property.id, false);
+        } else {
+          setSaveError(true);
+          setTimeout(() => setSaveError(false), 3000);
         }
       } else {
         // Save the property
@@ -75,10 +80,15 @@ export default function PropertyCard({
 
         if (response.ok) {
           onSaveToggle?.(property.id, true);
+        } else {
+          setSaveError(true);
+          setTimeout(() => setSaveError(false), 3000);
         }
       }
     } catch (error) {
       console.error('Error toggling save:', error);
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -120,29 +130,45 @@ export default function PropertyCard({
 
           {/* Save Button */}
           {showSaveButton && (
-            <button
-              onClick={handleSaveClick}
-              disabled={isSaving}
-              className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                isSaved
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white/90 text-gray-700 hover:bg-white'
-              } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <svg
-                className="w-5 h-5"
-                fill={isSaved ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="absolute top-4 right-4">
+              <button
+                onClick={handleSaveClick}
+                disabled={isSaving}
+                aria-label={isSaved ? 'Remove from saved' : 'Save property'}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                  saveError
+                    ? 'bg-red-500 text-white'
+                    : isSaved
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white/90 text-gray-700 hover:bg-white'
+                } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
+                {saveError ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill={isSaved ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                )}
+              </button>
+              {saveError && (
+                <div className="absolute top-12 right-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  Failed to save
+                </div>
+              )}
+            </div>
           )}
 
           {/* Property Type Badge */}

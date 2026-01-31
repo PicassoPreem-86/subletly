@@ -41,7 +41,7 @@ export default function DetailsStep({ register, errors, watch, setValue }: Detai
   const toggleAmenity = (amenity: string) => {
     const current = amenities || [];
     if (current.includes(amenity)) {
-      setValue('amenities', current.filter((a) => a !== amenity), { shouldValidate: true });
+      setValue('amenities', current.filter((a: string) => a !== amenity), { shouldValidate: true });
     } else {
       setValue('amenities', [...current, amenity], { shouldValidate: true });
     }

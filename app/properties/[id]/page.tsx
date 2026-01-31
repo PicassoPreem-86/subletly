@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -41,7 +41,8 @@ interface Property {
   createdAt: string;
 }
 
-export default function PropertyDetailPage({ params }: { params: { id: string } }) {
+export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const { data: session } = useSession();
   const [property, setProperty] = useState<Property | null>(null);
@@ -62,16 +63,16 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     if (session?.user) {
       checkIfSaved();
     }
-  }, [params.id, session]);
+  }, [id, session]);
 
   const fetchProperty = async () => {
     try {
-      const response = await fetch(`/api/properties/${params.id}`);
+      const response = await fetch(`/api/properties/${id}`);
       const data = await response.json();
       setProperty(data);
 
       // Increment view count
-      await fetch(`/api/properties/${params.id}/view`, { method: 'POST' });
+      await fetch(`/api/properties/${id}/view`, { method: 'POST' });
     } catch (error) {
       console.error('Failed to fetch property:', error);
     } finally {
@@ -83,8 +84,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     try {
       const response = await fetch('/api/saved-properties');
       const data = await response.json();
-      const savedIds = data.savedProperties?.map((sp: any) => sp.property.id) || [];
-      setIsSaved(savedIds.includes(params.id));
+      const savedIds = data.savedProperties?.map((sp: { property: { id: string } }) => sp.property.id) || [];
+      setIsSaved(savedIds.includes(id));
     } catch (error) {
       console.error('Failed to check saved status:', error);
     }
@@ -98,7 +99,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
 
     try {
       if (isSaved) {
-        await fetch(`/api/saved-properties?propertyId=${params.id}`, {
+        await fetch(`/api/saved-properties?propertyId=${id}`, {
           method: 'DELETE',
         });
         setIsSaved(false);
@@ -106,7 +107,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         await fetch('/api/saved-properties', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ propertyId: params.id }),
+          body: JSON.stringify({ propertyId: id }),
         });
         setIsSaved(true);
       }
@@ -130,7 +131,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          propertyId: params.id,
+          propertyId: id,
           message,
           phone: phone || undefined,
           moveInDate: moveInDate || undefined,

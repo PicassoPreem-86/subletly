@@ -38,6 +38,9 @@ export default function AccountMenu({ session }: AccountMenuProps) {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-label={`Account menu for ${session.user.firstName} ${session.user.lastName}`}
         className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
       >
         {/* Avatar */}
@@ -68,7 +71,11 @@ export default function AccountMenu({ session }: AccountMenuProps) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+        <div
+          role="menu"
+          aria-orientation="vertical"
+          className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50"
+        >
           {/* User Info */}
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-medium text-gray-900">
